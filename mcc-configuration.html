@@ -1,0 +1,1059 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MCC Configuration</title>
+    
+    <!--
+    ============================================================================
+    MCC CONFIGURATION TOOL - CONFLUENCE EMBEDDING GUIDE
+    ============================================================================
+    
+    This is a self-contained HTML file for configuring MCC (Merchant Category Code)
+    and product processing fees. It requires NO external dependencies or CDN links.
+    
+    ============================================================================
+    OPTION 1: CONFLUENCE HTML MACRO (RECOMMENDED)
+    ============================================================================
+    
+    1. Edit your Confluence page
+    2. Type "/html" and select "HTML" macro
+    3. Copy and paste this ENTIRE file content into the macro
+    4. Save the page
+    
+    Note: Some Confluence instances may restrict inline <script> tags for security.
+    If the page doesn't work, try Option 2 below.
+    
+    ============================================================================
+    OPTION 2: IFRAME EMBEDDING (IF HTML MACRO IS RESTRICTED)
+    ============================================================================
+    
+    1. Save this file as "mcc-configuration.html"
+    2. Upload to a static file hosting service or your web server
+    3. In Confluence, use the "HTML" macro with iframe:
+    
+       <iframe src="https://your-domain.com/mcc-configuration.html" 
+               width="100%" 
+               height="1200px" 
+               frameborder="0"
+               style="border: none;">
+       </iframe>
+    
+    Adjust height as needed (1200px is recommended for full view).
+    
+    ============================================================================
+    OPTION 3: CONFLUENCE PAGE ATTACHMENT
+    ============================================================================
+    
+    1. Upload this file as an attachment to your Confluence page
+    2. Use the "HTML" macro with iframe pointing to the attachment:
+    
+       <iframe src="/download/attachments/[PAGE_ID]/mcc-configuration.html" 
+               width="100%" 
+               height="1200px" 
+               frameborder="0">
+       </iframe>
+    
+    Replace [PAGE_ID] with your actual Confluence page ID.
+    
+    ============================================================================
+    FEATURES
+    ============================================================================
+    
+    - MCC Selector: Choose between Default and Fashion
+    - Product Configuration: Enable/disable products (Postpaid, 3/7/11 months)
+    - Grab Bundle: Toggle bundle per product
+    - PF Waiver: Select waiver percentage (0% to 100%)
+    - Processing Fee: Auto-calculated based on waiver mapping
+    - Live Summary: Real-time configuration overview
+    - Export JSON: Copy configuration to clipboard
+    - Reset: Restore default settings
+    
+    ============================================================================
+    BROWSER COMPATIBILITY
+    ============================================================================
+    
+    - Chrome/Edge: ✓ Fully supported
+    - Firefox: ✓ Fully supported
+    - Safari: ✓ Fully supported
+    - IE11: ✗ Not supported (uses modern JavaScript)
+    
+    ============================================================================
+    -->
+    
+    <style>
+        /* Reset and base styles - Confluence-friendly */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
+            background-color: transparent; /* Transparent for Confluence */
+            padding: 20px;
+            color: #333;
+            line-height: 1.5;
+        }
+        
+        /* Make body adapt to Confluence container */
+        html, body {
+            min-height: auto;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            padding: 24px;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 32px;
+            padding-bottom: 16px;
+            border-bottom: 2px solid #00b14f;
+        }
+
+        h1 {
+            font-size: 28px;
+            font-weight: 600;
+            color: #00b14f;
+        }
+
+        .mcc-selector {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .mcc-selector label {
+            font-weight: 500;
+            font-size: 14px;
+            color: #666;
+        }
+
+        #mcc-select {
+            padding: 8px 16px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+            background-color: white;
+            cursor: pointer;
+            min-width: 140px;
+            transition: border-color 0.2s ease;
+        }
+
+        #mcc-select:hover {
+            border-color: #00b14f;
+        }
+
+        #mcc-select:focus {
+            outline: none;
+            border-color: #00b14f;
+            box-shadow: 0 0 0 3px rgba(0, 177, 79, 0.1);
+        }
+
+        .content-placeholder {
+            padding: 40px;
+            text-align: center;
+            color: #999;
+            font-style: italic;
+        }
+
+        .summary {
+            margin-top: 32px;
+            padding: 20px;
+            background-color: #f9f9f9;
+            border-radius: 6px;
+            border-left: 4px solid #00b14f;
+        }
+
+        .summary h2 {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 12px;
+            color: #333;
+        }
+
+        .summary-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 8px;
+        }
+
+        .summary-label {
+            font-weight: 500;
+            color: #666;
+        }
+
+        .mcc-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            background-color: #00b14f;
+            color: white;
+            border-radius: 12px;
+            font-size: 13px;
+            font-weight: 500;
+        }
+
+        /* Product rows styling */
+        .products-section {
+            margin-bottom: 32px;
+        }
+
+        .products-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+
+        .products-header h3 {
+            font-size: 16px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .fee-note {
+            font-size: 12px;
+            color: #666;
+            font-style: italic;
+        }
+
+        .mapping-info {
+            font-size: 11px;
+            color: #999;
+            margin-top: 4px;
+            font-style: italic;
+        }
+
+        .products-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .products-table thead {
+            background-color: #f5f5f5;
+        }
+
+        .products-table th {
+            text-align: left;
+            padding: 12px 16px;
+            font-weight: 600;
+            font-size: 14px;
+            color: #666;
+            border-bottom: 2px solid #e0e0e0;
+        }
+
+        .products-table td {
+            padding: 16px;
+            border-bottom: 1px solid #f0f0f0;
+            vertical-align: middle;
+        }
+
+        .products-table tr:hover {
+            background-color: #fafafa;
+        }
+
+        .products-table tr.disabled {
+            opacity: 0.5;
+            background-color: #f9f9f9;
+        }
+
+        .product-name {
+            font-weight: 500;
+            font-size: 15px;
+            color: #333;
+        }
+
+        .checkbox-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .checkbox-wrapper input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+            accent-color: #00b14f;
+        }
+
+        .checkbox-wrapper label {
+            font-size: 14px;
+            color: #666;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .control-placeholder {
+            color: #999;
+            font-style: italic;
+            font-size: 13px;
+        }
+
+        /* PF Waiver selector styling */
+        .waiver-select {
+            padding: 6px 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 13px;
+            background-color: white;
+            cursor: pointer;
+            min-width: 80px;
+            transition: border-color 0.2s ease;
+        }
+
+        .waiver-select:hover:not(:disabled) {
+            border-color: #00b14f;
+        }
+
+        .waiver-select:focus {
+            outline: none;
+            border-color: #00b14f;
+            box-shadow: 0 0 0 2px rgba(0, 177, 79, 0.1);
+        }
+
+        .waiver-select:disabled {
+            background-color: #f5f5f5;
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+
+        .fee-display {
+            font-weight: 600;
+            color: #00b14f;
+            font-size: 15px;
+        }
+
+        .fee-display.na {
+            color: #999;
+            font-weight: 400;
+        }
+
+        /* Toggle switch styling */
+        .toggle-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 48px;
+            height: 24px;
+        }
+
+        .toggle-switch input[type="checkbox"] {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: 0.3s;
+            border-radius: 24px;
+        }
+
+        .toggle-slider:before {
+            position: absolute;
+            content: "";
+            height: 18px;
+            width: 18px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: 0.3s;
+            border-radius: 50%;
+        }
+
+        input[type="checkbox"]:checked + .toggle-slider {
+            background-color: #00b14f;
+        }
+
+        input[type="checkbox"]:checked + .toggle-slider:before {
+            transform: translateX(24px);
+        }
+
+        input[type="checkbox"]:disabled + .toggle-slider {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .toggle-label {
+            font-size: 13px;
+            color: #666;
+            font-weight: 500;
+        }
+
+        .toggle-label.on {
+            color: #00b14f;
+        }
+
+        /* Summary panel styling */
+        .summary {
+            margin-top: 32px;
+            padding: 24px;
+            background-color: #f9f9f9;
+            border-radius: 8px;
+            border-left: 4px solid #00b14f;
+        }
+
+        .summary h2 {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 16px;
+            color: #333;
+        }
+
+        .summary-content {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .summary-mcc-section {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .summary-products-table {
+            width: 100%;
+            background: white;
+            border-radius: 6px;
+            overflow: hidden;
+            border: 1px solid #e0e0e0;
+        }
+
+        .summary-products-table table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .summary-products-table th {
+            background-color: #f5f5f5;
+            padding: 10px 12px;
+            text-align: left;
+            font-size: 12px;
+            font-weight: 600;
+            color: #666;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .summary-products-table td {
+            padding: 10px 12px;
+            font-size: 13px;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .summary-products-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .summary-status {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 500;
+        }
+
+        .summary-status.enabled {
+            background-color: #e6f7ed;
+            color: #00b14f;
+        }
+
+        .summary-status.disabled {
+            background-color: #f0f0f0;
+            color: #999;
+        }
+
+        .summary-bundle {
+            font-weight: 500;
+        }
+
+        .summary-bundle.on {
+            color: #00b14f;
+        }
+
+        .summary-bundle.off {
+            color: #999;
+        }
+
+        .summary-actions {
+            display: flex;
+            gap: 12px;
+            margin-top: 16px;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background-color: #00b14f;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background-color: #009640;
+        }
+
+        .btn-secondary {
+            background-color: white;
+            color: #666;
+            border: 1px solid #ddd;
+        }
+
+        .btn-secondary:hover {
+            background-color: #f5f5f5;
+        }
+
+        /* Toast notification */
+        .toast {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            background-color: #00b14f;
+            color: white;
+            padding: 16px 24px;
+            border-radius: 6px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            display: none;
+            align-items: center;
+            gap: 10px;
+            z-index: 1000;
+            animation: slideIn 0.3s ease;
+        }
+
+        .toast.show {
+            display: flex;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(400px);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        .toast-icon {
+            font-size: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header with MCC Selector -->
+        <div class="header">
+            <h1>MCC Configuration</h1>
+            <div class="mcc-selector">
+                <label for="mcc-select">MCC:</label>
+                <select id="mcc-select" aria-label="Select Merchant Category Code">
+                    <option value="Default">Default</option>
+                    <option value="Fashion">Fashion</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- Product Rows -->
+        <div class="products-section">
+            <div class="products-header">
+                <h3>Product Configuration</h3>
+                <div>
+                    <div class="fee-note">Default: Bundle OFF = 1.5% Processing Fee</div>
+                    <div class="mapping-info">PF Waiver Mapping: 0%→1.5% | 20%→1.2% | 40%→0.9% | 60%→0.6% | 80%→0.3% | 100%→0%</div>
+                </div>
+            </div>
+            <table class="products-table">
+                <thead>
+                    <tr>
+                        <th>Product</th>
+                        <th>Availability</th>
+                        <th>Grab Bundle</th>
+                        <th>PF Waiver</th>
+                        <th>Processing Fee</th>
+                    </tr>
+                </thead>
+                <tbody id="products-tbody">
+                    <!-- Product rows will be dynamically rendered here -->
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Summary Section -->
+        <div class="summary">
+            <h2>Configuration Summary</h2>
+            <div class="summary-content">
+                <div class="summary-mcc-section">
+                    <span class="summary-label">Selected MCC:</span>
+                    <span class="mcc-badge" id="summary-mcc">Default</span>
+                </div>
+                
+                <div class="summary-products-table">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Product</th>
+                                <th>Status</th>
+                                <th>Bundle</th>
+                                <th>PF Waiver</th>
+                                <th>Processing Fee</th>
+                            </tr>
+                        </thead>
+                        <tbody id="summary-tbody">
+                            <!-- Summary rows will be dynamically rendered here -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="summary-actions">
+                    <button class="btn btn-primary" id="copy-json-btn">
+                        <span>📋</span>
+                        <span>Copy JSON</span>
+                    </button>
+                    <button class="btn btn-secondary" id="reset-btn">
+                        <span>🔄</span>
+                        <span>Reset to Defaults</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div class="toast" id="toast">
+        <span class="toast-icon">✓</span>
+        <span id="toast-message">JSON copied to clipboard!</span>
+    </div>
+
+    <script>
+        /**
+         * MCC Configuration Tool
+         * 
+         * This script is wrapped in an IIFE (Immediately Invoked Function Expression)
+         * to prevent global namespace pollution and avoid conflicts with other scripts
+         * that may be running in the Confluence environment.
+         * 
+         * All variables and functions are scoped within this closure.
+         */
+        (function() {
+            'use strict';
+            
+        // Initial defaults (for reset functionality)
+        const initialDefaults = {
+            mcc: 'Default',
+            products: [
+                { id: 'postpaid', label: 'Postpaid', enabled: true, bundle: false, pfWaiver: 0, fee: 1.5 },
+                { id: '3months', label: '3 months', enabled: true, bundle: false, pfWaiver: 0, fee: 1.5 },
+                { id: '7months', label: '7 months', enabled: true, bundle: false, pfWaiver: 0, fee: 1.5 },
+                { id: '11months', label: '11 months', enabled: true, bundle: false, pfWaiver: 0, fee: 1.5 }
+            ]
+        };
+
+        // Products data model (working copy)
+        const products = JSON.parse(JSON.stringify(initialDefaults.products));
+
+        // Configuration state
+        const config = {
+            mcc: initialDefaults.mcc,
+            products: products
+        };
+
+        // DOM elements
+        const mccSelect = document.getElementById('mcc-select');
+        const summaryMcc = document.getElementById('summary-mcc');
+        const productsTbody = document.getElementById('products-tbody');
+        const summaryTbody = document.getElementById('summary-tbody');
+        const copyJsonBtn = document.getElementById('copy-json-btn');
+        const resetBtn = document.getElementById('reset-btn');
+        const toast = document.getElementById('toast');
+        const toastMessage = document.getElementById('toast-message');
+
+        // PF Waiver to Processing Fee mapping
+        function calculateProcessingFee(pfWaiver) {
+            const feeMap = {
+                0: 1.5,
+                20: 1.2,
+                40: 0.9,
+                60: 0.6,
+                80: 0.3,
+                100: 0.0
+            };
+            return feeMap[pfWaiver] !== undefined ? feeMap[pfWaiver] : 1.5;
+        }
+
+        // Render summary table
+        function renderSummary() {
+            summaryTbody.innerHTML = '';
+            
+            products.forEach(product => {
+                const row = document.createElement('tr');
+                
+                // Product name
+                const nameCell = document.createElement('td');
+                nameCell.textContent = product.label;
+                nameCell.style.fontWeight = '500';
+                row.appendChild(nameCell);
+                
+                // Status
+                const statusCell = document.createElement('td');
+                const statusBadge = document.createElement('span');
+                statusBadge.className = `summary-status ${product.enabled ? 'enabled' : 'disabled'}`;
+                statusBadge.textContent = product.enabled ? 'Enabled' : 'Disabled';
+                statusCell.appendChild(statusBadge);
+                row.appendChild(statusCell);
+                
+                // Bundle
+                const bundleCell = document.createElement('td');
+                const bundleSpan = document.createElement('span');
+                bundleSpan.className = `summary-bundle ${product.bundle ? 'on' : 'off'}`;
+                bundleSpan.textContent = product.enabled ? (product.bundle ? 'ON' : 'OFF') : '—';
+                bundleCell.appendChild(bundleSpan);
+                row.appendChild(bundleCell);
+                
+                // PF Waiver
+                const waiverCell = document.createElement('td');
+                waiverCell.textContent = product.enabled ? `${product.pfWaiver}%` : '—';
+                row.appendChild(waiverCell);
+                
+                // Processing Fee
+                const feeCell = document.createElement('td');
+                if (product.enabled && product.fee !== null) {
+                    feeCell.textContent = `${product.fee.toFixed(1)}%`;
+                    feeCell.style.fontWeight = '600';
+                    feeCell.style.color = '#00b14f';
+                } else {
+                    feeCell.textContent = '—';
+                    feeCell.style.color = '#999';
+                }
+                row.appendChild(feeCell);
+                
+                summaryTbody.appendChild(row);
+            });
+        }
+
+        // Show toast notification
+        function showToast(message, duration = 3000) {
+            toastMessage.textContent = message;
+            toast.classList.add('show');
+            
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, duration);
+        }
+
+        // Copy JSON to clipboard
+        async function copyJsonToClipboard() {
+            const exportData = {
+                mcc: config.mcc,
+                products: products.map(p => ({
+                    id: p.id,
+                    enabled: p.enabled,
+                    bundle: p.bundle,
+                    pf: p.pfWaiver,
+                    fee: p.fee
+                }))
+            };
+            
+            try {
+                await navigator.clipboard.writeText(JSON.stringify(exportData, null, 2));
+                showToast('✓ JSON copied to clipboard!');
+                console.log('Copied JSON:', exportData);
+            } catch (err) {
+                console.error('Failed to copy JSON:', err);
+                showToast('❌ Failed to copy JSON', 2000);
+            }
+        }
+
+        // Reset to defaults
+        function resetToDefaults() {
+            // Reset MCC
+            config.mcc = initialDefaults.mcc;
+            mccSelect.value = config.mcc;
+            summaryMcc.textContent = config.mcc;
+            
+            // Reset products to initial defaults
+            products.length = 0; // Clear array
+            initialDefaults.products.forEach(p => {
+                products.push(JSON.parse(JSON.stringify(p)));
+            });
+            
+            // Re-render everything
+            renderProducts();
+            renderSummary();
+            dispatchConfigUpdate();
+            
+            showToast('🔄 Configuration reset to defaults');
+            console.log('Configuration reset to defaults');
+        }
+
+        // Render product rows
+        function renderProducts() {
+            productsTbody.innerHTML = '';
+            
+            products.forEach(product => {
+                const row = document.createElement('tr');
+                row.className = product.enabled ? '' : 'disabled';
+                row.id = `row-${product.id}`;
+                
+                // Product name cell
+                const nameCell = document.createElement('td');
+                nameCell.innerHTML = `<span class="product-name">${product.label}</span>`;
+                row.appendChild(nameCell);
+                
+                // Availability checkbox cell
+                const availCell = document.createElement('td');
+                availCell.innerHTML = `
+                    <div class="checkbox-wrapper">
+                        <input type="checkbox" 
+                               id="enable-${product.id}" 
+                               ${product.enabled ? 'checked' : ''}
+                               aria-label="Enable ${product.label}">
+                        <label for="enable-${product.id}">Available</label>
+                    </div>
+                `;
+                row.appendChild(availCell);
+                
+                // Grab Bundle toggle cell
+                const bundleCell = document.createElement('td');
+                if (product.enabled) {
+                    bundleCell.innerHTML = `
+                        <div class="toggle-wrapper">
+                            <label class="toggle-switch">
+                                <input type="checkbox" 
+                                       id="bundle-${product.id}"
+                                       ${product.bundle ? 'checked' : ''}
+                                       aria-label="Toggle Grab Bundle for ${product.label}">
+                                <span class="toggle-slider"></span>
+                            </label>
+                            <span class="toggle-label ${product.bundle ? 'on' : ''}">${product.bundle ? 'ON' : 'OFF'}</span>
+                        </div>
+                    `;
+                } else {
+                    bundleCell.innerHTML = '<span class="control-placeholder">—</span>';
+                }
+                row.appendChild(bundleCell);
+                
+                // PF Waiver selector cell
+                const waiverCell = document.createElement('td');
+                if (product.enabled && product.bundle) {
+                    // Show enabled selector
+                    waiverCell.innerHTML = `
+                        <select class="waiver-select" 
+                                id="waiver-${product.id}"
+                                aria-label="Select PF Waiver for ${product.label}">
+                            <option value="0" ${product.pfWaiver === 0 ? 'selected' : ''}>0%</option>
+                            <option value="20" ${product.pfWaiver === 20 ? 'selected' : ''}>20%</option>
+                            <option value="40" ${product.pfWaiver === 40 ? 'selected' : ''}>40%</option>
+                            <option value="60" ${product.pfWaiver === 60 ? 'selected' : ''}>60%</option>
+                            <option value="80" ${product.pfWaiver === 80 ? 'selected' : ''}>80%</option>
+                            <option value="100" ${product.pfWaiver === 100 ? 'selected' : ''}>100%</option>
+                        </select>
+                    `;
+                } else if (product.enabled && !product.bundle) {
+                    // Show disabled selector with tooltip
+                    waiverCell.innerHTML = `
+                        <select class="waiver-select" disabled>
+                            <option>0%</option>
+                        </select>
+                    `;
+                } else {
+                    waiverCell.innerHTML = '<span class="control-placeholder">—</span>';
+                }
+                row.appendChild(waiverCell);
+                
+                // Processing Fee cell
+                const feeCell = document.createElement('td');
+                if (product.enabled) {
+                    const feeValue = product.fee !== null ? product.fee.toFixed(1) + '%' : '—';
+                    feeCell.innerHTML = `<span class="fee-display">${feeValue}</span>`;
+                } else {
+                    feeCell.innerHTML = `<span class="fee-display na">—</span>`;
+                }
+                row.appendChild(feeCell);
+                
+                productsTbody.appendChild(row);
+            });
+            
+            // Add event listeners to checkboxes, toggles, and selectors
+            products.forEach(product => {
+                const checkbox = document.getElementById(`enable-${product.id}`);
+                checkbox.addEventListener('change', (e) => {
+                    handleProductToggle(product.id, e.target.checked);
+                });
+                
+                // Add event listener for bundle toggle (only if product is enabled)
+                if (product.enabled) {
+                    const bundleToggle = document.getElementById(`bundle-${product.id}`);
+                    if (bundleToggle) {
+                        bundleToggle.addEventListener('change', (e) => {
+                            handleBundleToggle(product.id, e.target.checked);
+                        });
+                    }
+                    
+                    // Add event listener for PF Waiver selector (only if bundle is ON)
+                    if (product.bundle) {
+                        const waiverSelect = document.getElementById(`waiver-${product.id}`);
+                        if (waiverSelect) {
+                            waiverSelect.addEventListener('change', (e) => {
+                                handleWaiverChange(product.id, parseInt(e.target.value));
+                            });
+                        }
+                    }
+                }
+            });
+        }
+
+        // Handle product enable/disable toggle
+        function handleProductToggle(productId, enabled) {
+            const product = products.find(p => p.id === productId);
+            if (product) {
+                product.enabled = enabled;
+                
+                // If disabled, reset bundle, waiver, and fee
+                if (!enabled) {
+                    product.bundle = false;
+                    product.pfWaiver = 0;
+                    product.fee = null; // Will display as "—"
+                } else {
+                    // If re-enabled, set to default: bundle OFF, waiver 0%, fee 1.5%
+                    product.bundle = false;
+                    product.pfWaiver = 0;
+                    product.fee = calculateProcessingFee(0); // 1.5%
+                }
+                
+                // Re-render products
+                renderProducts();
+                
+                // Dispatch config update event
+                dispatchConfigUpdate();
+                
+                console.log(`Product ${productId} ${enabled ? 'enabled' : 'disabled'}`, product);
+            }
+        }
+
+        // Handle Grab Bundle toggle
+        function handleBundleToggle(productId, bundleOn) {
+            const product = products.find(p => p.id === productId);
+            if (product) {
+                product.bundle = bundleOn;
+                
+                // If bundle is turned OFF, reset PF Waiver to 0% and fee to default 1.5%
+                if (!bundleOn) {
+                    product.pfWaiver = 0;
+                    product.fee = calculateProcessingFee(0); // 1.5%
+                } else {
+                    // If bundle is turned ON, keep previous pfWaiver or default to 0%
+                    // Calculate fee based on current pfWaiver
+                    product.fee = calculateProcessingFee(product.pfWaiver);
+                }
+                
+                // Re-render products
+                renderProducts();
+                
+                // Dispatch config update event
+                dispatchConfigUpdate();
+                
+                console.log(`Product ${productId} bundle ${bundleOn ? 'ON' : 'OFF'}, PF Waiver: ${product.pfWaiver}%, Fee: ${product.fee}%`);
+            }
+        }
+
+        // Handle PF Waiver change
+        function handleWaiverChange(productId, waiverValue) {
+            const product = products.find(p => p.id === productId);
+            if (product) {
+                // Update PF Waiver
+                product.pfWaiver = waiverValue;
+                
+                // Calculate and update Processing Fee based on waiver
+                product.fee = calculateProcessingFee(waiverValue);
+                
+                // Re-render products
+                renderProducts();
+                
+                // Dispatch config update event
+                dispatchConfigUpdate();
+                
+                console.log(`Product ${productId} PF Waiver changed to ${waiverValue}%, Fee: ${product.fee}%`);
+            }
+        }
+
+        // Dispatch config update event
+        function dispatchConfigUpdate() {
+            // Update summary
+            renderSummary();
+            
+            const configUpdateEvent = new CustomEvent('config:update', {
+                detail: { config }
+            });
+            document.dispatchEvent(configUpdateEvent);
+        }
+
+        // Handle MCC change
+        mccSelect.addEventListener('change', (event) => {
+            const newMcc = event.target.value;
+            config.mcc = newMcc;
+            
+            // Update summary badge
+            summaryMcc.textContent = newMcc;
+            
+            // Dispatch config update
+            dispatchConfigUpdate();
+            
+            console.log('MCC changed to:', newMcc);
+        });
+
+        // Listen for config updates (for debugging/extensibility)
+        document.addEventListener('config:update', (event) => {
+            console.log('Configuration updated:', event.detail.config);
+        });
+
+        // Event listeners for action buttons
+        copyJsonBtn.addEventListener('click', copyJsonToClipboard);
+        resetBtn.addEventListener('click', resetToDefaults);
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('MCC Configuration initialized');
+            renderProducts();
+            renderSummary();
+        });
+        
+        })(); // End of IIFE
+    </script>
+</body>
+</html>
+
